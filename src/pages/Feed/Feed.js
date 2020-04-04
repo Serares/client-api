@@ -22,7 +22,13 @@ class Feed extends Component {
   };
 
   componentDidMount() {
-    fetch('url')
+    fetch('http://localhost:8080/feed/userStatus', {
+      headers: {
+        //bearer is a convention to identify that the type of token
+        // sending the requests with the token that it's stored in localStorage
+        Authorization: 'Bearer ' + this.props.token
+      }
+    })
       .then(res => {
         if (res.status !== 200) {
           throw new Error('Failed to fetch user status.');
@@ -30,6 +36,7 @@ class Feed extends Component {
         return res.json();
       })
       .then(resData => {
+        console.log("RES DATA", resData);
         this.setState({ status: resData.status });
       })
       .catch(this.catchError);
@@ -50,7 +57,13 @@ class Feed extends Component {
       page--;
       this.setState({ postPage: page });
     }
-    fetch('http://localhost:8080/feed/posts')
+    fetch('http://localhost:8080/feed/posts?pageNumber=' + page, {
+      headers: {
+        //bearer is a convention to identify that the type of token
+        // sending the requests with the token that it's stored in localStorage
+        Authorization: 'Bearer ' + this.props.token
+      }
+    })
       .then(res => {
         if (res.status !== 200) {
           throw new Error('Failed to fetch posts.');
@@ -58,8 +71,14 @@ class Feed extends Component {
         return res.json();
       })
       .then(resData => {
+        console.log("CE PLM", resData);
         this.setState({
-          posts: resData.posts,
+          posts: resData.posts.map(post => {
+            return {
+              ...post,
+              imagePath: post.imageUrl
+            };
+          }),
           totalPosts: resData.totalItems,
           postsLoading: false
         });
@@ -69,7 +88,18 @@ class Feed extends Component {
 
   statusUpdateHandler = event => {
     event.preventDefault();
-    fetch('URL')
+    fetch('http://localhost:8080/feed/updateUserStatus', {
+      method: "PUT",
+      headers: {
+        "Content-Type": 'application/json',
+        //bearer is a convention to identify that the type of token
+        // sending the requests with the token that it's stored in localStorage
+        Authorization: 'Bearer ' + this.props.token
+      },
+      body: JSON.stringify({
+        status: this.state.status
+      })
+    })
       .then(res => {
         if (res.status !== 200 && res.status !== 201) {
           throw new Error("Can't update status!");
@@ -109,7 +139,8 @@ class Feed extends Component {
     let url = 'http://localhost:8080/feed/post';
     let method = "POST";
     if (this.state.editPost) {
-      url = 'URL';
+      url = 'http://localhost:8080/feed/post/' + this.state.editPost._id;
+      method = "PUT";
     }
     let formData = new FormData();
     formData.append('content', postData.content);
@@ -118,7 +149,12 @@ class Feed extends Component {
 
     fetch(url, {
       method: method,
-      body: formData
+      body: formData,
+      headers: {
+        //bearer is a convention to identify that the type of token
+        // sending the requests with the token that it's stored in localStorage
+        Authorization: 'Bearer ' + this.props.token
+      }
     })
       .then(res => {
         if (res.status !== 200 && res.status !== 201) {
@@ -170,7 +206,14 @@ class Feed extends Component {
 
   deletePostHandler = postId => {
     this.setState({ postsLoading: true });
-    fetch('URL')
+    fetch('http://localhost:8080/feed/post/' + postId, {
+      method: "DELETE",
+      headers: {
+        //bearer is a convention to identify that the type of token
+        // sending the requests with the token that it's stored in localStorage
+        Authorization: 'Bearer ' + this.props.token
+      }
+    })
       .then(res => {
         if (res.status !== 200 && res.status !== 201) {
           throw new Error('Deleting a post failed!');
